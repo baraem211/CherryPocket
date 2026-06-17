@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#e8344e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>체리포켓 🍒</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- 스플래시 화면 -->
+  <div id="splash-screen" class="splash">
+    <div class="splash-content">
+      <div class="splash-logo">🍒</div>
+      <h1 class="splash-title">체리포켓</h1>
+      <p class="splash-sub">새는 돈 없이 잘 쓰기</p>
+      <div class="splash-loader">
+        <div class="loader-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 앱 메인 컨테이너 -->
+  <div id="app" class="app-container" style="display:none;">
+
+    <!-- 헤더 -->
+    <header class="app-header" id="app-header">
+      <div class="header-left">
+        <span class="header-logo">🍒</span>
+        <span class="header-title">체리포켓</span>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" id="notification-btn" aria-label="알림">
+          <i class="fas fa-bell"></i>
+          <span class="badge" id="notif-badge">2</span>
+        </button>
+        <button class="icon-btn" id="add-expense-btn" aria-label="지출추가">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- 페이지 뷰 -->
+    <main class="page-container" id="page-container">
+
+      <!-- 대시보드 -->
+      <section id="page-dashboard" class="page active">
+        <div class="scroll-content">
+          <!-- 이번달 요약 카드 -->
+          <div class="summary-hero">
+            <div class="summary-month" id="summary-month">2026년 6월</div>
+            <div class="summary-main">
+              <div class="summary-label">이번 달 지출</div>
+              <div class="summary-amount" id="dashboard-total-expense">0원</div>
+            </div>
+            <div class="summary-stats">
+              <div class="stat-item">
+                <span class="stat-val" id="dash-discount">0원</span>
+                <span class="stat-label">총 할인 혜택</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-val" id="dash-fixed">0원</span>
+                <span class="stat-label">고정 지출</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-val" id="dash-variable">0원</span>
+                <span class="stat-label">변동 지출</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 실적 알림 섹션 -->
+          <div class="section-block">
+            <div class="section-header">
+              <h2>💳 카드 실적 현황</h2>
+              <button class="text-btn" onclick="switchTab('cards')">전체보기</button>
+            </div>
+            <div id="dashboard-cards" class="card-scroll-row"></div>
+          </div>
+
+          <!-- 냉장고 임박 알림 -->
+          <div class="section-block" id="fridge-alert-section">
+            <div class="section-header">
+              <h2>🧊 유통기한 임박</h2>
+              <button class="text-btn" onclick="switchTab('fridge')">냉장고 보기</button>
+            </div>
+            <div id="fridge-alert-list" class="alert-list"></div>
+          </div>
+
+          <!-- 지출 카테고리 차트 -->
+          <div class="section-block">
+            <div class="section-header">
+              <h2>📊 카테고리별 지출</h2>
+              <button class="text-btn" onclick="switchTab('stats')">상세보기</button>
+            </div>
+            <div class="chart-wrap" style="height:260px;">
+              <canvas id="dashboard-donut-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- 최근 지출 내역 -->
+          <div class="section-block">
+            <div class="section-header">
+              <h2>🧾 최근 지출</h2>
+              <button class="text-btn" onclick="switchTab('expenses')">전체보기</button>
+            </div>
+            <div id="recent-expenses" class="expense-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 카드 관리 -->
+      <section id="page-cards" class="page">
+        <div class="scroll-content">
+          <div class="page-title-bar">
+            <h1>내 카드 관리</h1>
+            <button class="btn-primary btn-sm" id="add-card-btn">
+              <i class="fas fa-plus"></i> 카드 추가
+            </button>
+          </div>
+
+          <!-- 카드 슬라이더 -->
+          <div id="my-cards-list" class="my-cards-list"></div>
+
+          <!-- 카드 혜택 추천 -->
+          <div class="section-block">
+            <div class="section-header">
+              <h2>🎯 오늘의 카드 추천</h2>
+            </div>
+            <div id="card-recommend" class="recommend-list"></div>
+          </div>
+
+          <!-- 이번 달 카드별 사용 현황 -->
+          <div class="section-block">
+            <div class="section-header">
+              <h2>📈 카드별 사용 현황</h2>
+            </div>
+            <div id="card-usage-list" class="card-usage-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 지출 내역 -->
+      <section id="page-expenses" class="page">
+        <div class="scroll-content">
+          <div class="page-title-bar">
+            <h1>지출 내역</h1>
+            <div class="month-nav">
+              <button class="month-btn" id="prev-month-btn"><i class="fas fa-chevron-left"></i></button>
+              <span id="expense-month-label">2026년 6월</span>
+              <button class="month-btn" id="next-month-btn"><i class="fas fa-chevron-right"></i></button>
+            </div>
+          </div>
+
+          <!-- 필터 탭 -->
+          <div class="filter-tabs" id="expense-filter-tabs">
+            <button class="filter-tab active" data-filter="all">전체</button>
+            <button class="filter-tab" data-filter="카드">카드</button>
+            <button class="filter-tab" data-filter="고정">고정</button>
+            <button class="filter-tab" data-filter="식료품">식료품</button>
+            <button class="filter-tab" data-filter="외식">외식</button>
+            <button class="filter-tab" data-filter="교통">교통</button>
+            <button class="filter-tab" data-filter="의료">의료</button>
+          </div>
+
+          <!-- 월 합계 -->
+          <div class="expense-month-summary" id="expense-month-summary"></div>
+
+          <!-- 지출 목록 -->
+          <div id="expense-full-list" class="expense-list expense-full"></div>
+        </div>
+      </section>
+
+      <!-- 통계 -->
+      <section id="page-stats" class="page">
+        <div class="scroll-content">
+          <div class="page-title-bar">
+            <h1>지출 통계</h1>
+            <div class="month-nav">
+              <button class="month-btn" id="stat-prev-month"><i class="fas fa-chevron-left"></i></button>
+              <span id="stat-month-label">2026년 6월</span>
+              <button class="month-btn" id="stat-next-month"><i class="fas fa-chevron-right"></i></button>
+            </div>
+          </div>
+
+          <!-- 예산 vs 실제 -->
+          <div class="section-block">
+            <div class="section-header">
+              <h2>🎯 예산 대비 지출</h2>
+              <button class="text-btn" onclick="switchTab('budget')">예산설정</button>
+            </div>
+            <div id="budget-progress-list" class="budget-list"></div>
+          </div>
+
+          <!-- 카테고리 차트 -->
+          <div class="section-block">
+            <div class="section-header">
+              <h2>📊 카테고리 분석</h2>
+            </div>
+            <div class="chart-wrap" style="height:280px;">
+              <canvas id="stats-bar-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- 3개월 비교 -->
+          <div class="section-block">
+            <div class="section-header">
+              <h2>📅 3개월 지출 비교</h2>
+            </div>
+            <div class="chart-wrap" style="height:220px;">
+              <canvas id="stats-line-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- 할인 혜택 요약 -->
+          <div class="section-block">
+            <div class="section-header">
+              <h2>💰 할인 혜택 정리</h2>
+            </div>
+            <div id="discount-summary" class="discount-summary"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 냉장고 관리 -->
+      <section id="page-fridge" class="page">
+        <div class="scroll-content">
+          <div class="page-title-bar">
+            <h1>🧊 냉장고 파먹기</h1>
+            <button class="btn-primary btn-sm" id="add-fridge-btn">
+              <i class="fas fa-plus"></i> 재료 추가
+            </button>
+          </div>
+
+          <!-- 냉장고 탭 -->
+          <div class="filter-tabs">
+            <button class="filter-tab active" data-storage="all">전체</button>
+            <button class="filter-tab" data-storage="냉장">냉장</button>
+            <button class="filter-tab" data-storage="냉동">냉동</button>
+            <button class="filter-tab" data-storage="실온">실온</button>
+          </div>
+
+          <!-- 영수증 스캔 배너 -->
+          <div class="receipt-scan-banner" id="receipt-scan-banner">
+            <div class="scan-icon">📷</div>
+            <div class="scan-text">
+              <strong>영수증 스캔으로 재료 추가</strong>
+              <small>사진을 찍으면 식재료를 자동으로 인식해요</small>
+            </div>
+            <button class="scan-btn" id="scan-receipt-btn">스캔</button>
+          </div>
+
+          <!-- 유통기한 임박 -->
+          <div class="section-block" id="fridge-expire-section">
+            <div class="section-header">
+              <h2>⚠️ 유통기한 주의</h2>
+            </div>
+            <div id="fridge-expire-list" class="fridge-expire-list"></div>
+          </div>
+
+          <!-- 재료 목록 -->
+          <div class="section-block">
+            <div class="section-header">
+              <h2>전체 재료 목록</h2>
+              <span id="fridge-count-label" class="count-label">0개</span>
+            </div>
+            <div id="fridge-items-grid" class="fridge-grid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 예산 관리 -->
+      <section id="page-budget" class="page">
+        <div class="scroll-content">
+          <div class="page-title-bar">
+            <h1>예산 관리</h1>
+            <div class="month-nav">
+              <button class="month-btn" id="budget-prev-month"><i class="fas fa-chevron-left"></i></button>
+              <span id="budget-month-label">2026년 6월</span>
+              <button class="month-btn" id="budget-next-month"><i class="fas fa-chevron-right"></i></button>
+            </div>
+          </div>
+
+          <!-- 이번달 예산 요약 -->
+          <div class="budget-hero" id="budget-hero"></div>
+
+          <!-- 예산 항목별 설정 -->
+          <div class="section-block">
+            <div class="section-header">
+              <h2>📋 항목별 예산 설정</h2>
+              <button class="text-btn" id="edit-budget-btn">편집</button>
+            </div>
+            <div id="budget-items-list" class="budget-items-list"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 하단 내비게이션 -->
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="nav-item active" data-tab="dashboard">
+        <i class="fas fa-home"></i>
+        <span>홈</span>
+      </button>
+      <button class="nav-item" data-tab="cards">
+        <i class="fas fa-credit-card"></i>
+        <span>카드</span>
+      </button>
+      <button class="nav-item" data-tab="expenses">
+        <i class="fas fa-receipt"></i>
+        <span>지출</span>
+      </button>
+      <button class="nav-item" data-tab="stats">
+        <i class="fas fa-chart-pie"></i>
+        <span>통계</span>
+      </button>
+      <button class="nav-item" data-tab="fridge">
+        <i class="fas fa-box-open"></i>
+        <span>냉장고</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- 지출 추가 모달 -->
+  <div class="modal-overlay" id="add-expense-modal" style="display:none;">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3>지출 추가</h3>
+        <button class="modal-close" id="close-expense-modal"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>금액</label>
+          <div class="amount-input-wrap">
+            <input type="number" id="expense-amount" placeholder="0" class="amount-input">
+            <span>원</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>카테고리</label>
+          <div class="category-grid" id="expense-category-grid"></div>
+        </div>
+        <div class="form-group">
+          <label>내용</label>
+          <input type="text" id="expense-desc" placeholder="어디서 사용했나요?" class="form-input">
+        </div>
+        <div class="form-group">
+          <label>결제 수단</label>
+          <select id="expense-payment" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label>날짜</label>
+          <input type="date" id="expense-date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="toggle-label">
+            <span>고정 지출</span>
+            <div class="toggle-wrap">
+              <input type="checkbox" id="expense-fixed">
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary full-btn" id="save-expense-btn">저장하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 카드 추가 모달 -->
+  <div class="modal-overlay" id="add-card-modal" style="display:none;">
+    <div class="modal-sheet modal-tall">
+      <div class="modal-header">
+        <h3>카드 추가</h3>
+        <button class="modal-close" id="close-card-modal"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>카드사</label>
+          <select id="new-card-company" class="form-select" onchange="updateCardList()"></select>
+        </div>
+        <div class="form-group">
+          <label>카드명</label>
+          <select id="new-card-name" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label>카드 종류</label>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="card-type" value="credit" checked> 신용카드</label>
+            <label class="radio-label"><input type="radio" name="card-type" value="check"> 체크카드</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>카드 끝 4자리</label>
+          <input type="number" id="card-last4" placeholder="1234" maxlength="4" class="form-input">
+        </div>
+        <div class="form-group">
+          <label>카드 색상</label>
+          <div class="color-picker" id="card-color-picker"></div>
+        </div>
+        <div class="form-group">
+          <label>실적 조건</label>
+          <div class="perf-setting">
+            <select id="perf-type" class="form-select" style="width:40%">
+              <option value="amount">금액 기준</option>
+              <option value="period">기간 기준</option>
+            </select>
+            <input type="number" id="perf-limit" placeholder="300000" class="form-input" style="width:55%">
+            <span>원/월</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>주요 혜택 (최대 3개)</label>
+          <div id="benefit-input-list">
+            <input type="text" class="form-input benefit-input" placeholder="혜택 1 (예: 편의점 10% 할인)">
+            <input type="text" class="form-input benefit-input" placeholder="혜택 2 (예: 커피전문점 5% 할인)">
+            <input type="text" class="form-input benefit-input" placeholder="혜택 3 (예: 대중교통 10% 할인)">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary full-btn" id="save-card-btn">카드 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 재료 추가 모달 -->
+  <div class="modal-overlay" id="add-fridge-modal" style="display:none;">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3>재료 추가</h3>
+        <button class="modal-close" id="close-fridge-modal"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>재료명</label>
+          <input type="text" id="fridge-name" placeholder="재료 이름" class="form-input">
+        </div>
+        <div class="form-group">
+          <label>카테고리</label>
+          <select id="fridge-category" class="form-select">
+            <option value="고기류">고기류</option>
+            <option value="수산물">수산물</option>
+            <option value="유제품">유제품</option>
+            <option value="냉동식품">냉동식품</option>
+            <option value="가공식품">가공식품</option>
+            <option value="양념/소스">양념/소스</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <label>수량</label>
+            <input type="text" id="fridge-quantity" placeholder="500" class="form-input">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>단위</label>
+            <select id="fridge-unit" class="form-select">
+              <option value="g">g</option>
+              <option value="ml">ml</option>
+              <option value="개">개</option>
+              <option value="포기">포기</option>
+              <option value="봉지">봉지</option>
+              <option value="팩">팩</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>보관 방법</label>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="storage" value="냉장" checked> 냉장</label>
+            <label class="radio-label"><input type="radio" name="storage" value="냉동"> 냉동</label>
+            <label class="radio-label"><input type="radio" name="storage" value="실온"> 실온</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>유통기한</label>
+          <input type="date" id="fridge-expire" class="form-input">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary full-btn" id="save-fridge-btn">저장하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 알림 패널 -->
+  <div class="modal-overlay" id="notification-panel" style="display:none;">
+    <div class="modal-sheet modal-right">
+      <div class="modal-header">
+        <h3>🔔 알림</h3>
+        <button class="modal-close" id="close-notif-panel"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" id="notif-list"></div>
+    </div>
+  </div>
+
+  <!-- 토스트 메시지 -->
+  <div id="toast" class="toast" style="display:none;"></div>
+
+  <!-- ============================================
+       데스크톱 웹 레이아웃 (1024px 이상에서 표시)
+       ============================================ -->
+  <div class="web-layout" id="web-layout" style="display:none;">
+
+    <!-- 사이드바 -->
+    <aside class="web-sidebar" id="web-sidebar">
+      <div class="sidebar-brand">
+        <span class="sidebar-brand-logo">🍒</span>
+        <div class="sidebar-brand-text">
+          <div class="sidebar-brand-name">체리포켓</div>
+          <div class="sidebar-brand-sub">새는 돈 없이 잘 쓰기</div>
+        </div>
+      </div>
+
+      <!-- 이번달 미니 통계 -->
+      <div class="sidebar-stats" id="sidebar-stats">
+        <div class="sidebar-stats-month" id="sidebar-month-label">2026년 6월</div>
+        <div class="sidebar-stats-amount" id="sidebar-total">0원</div>
+        <div class="sidebar-stats-label">이번 달 총 지출</div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <button class="sidebar-nav-item active" data-web-tab="dashboard">
+          <i class="fas fa-home"></i> 홈 대시보드
+        </button>
+        <button class="sidebar-nav-item" data-web-tab="cards">
+          <i class="fas fa-credit-card"></i> 카드 관리
+        </button>
+        <button class="sidebar-nav-item" data-web-tab="expenses">
+          <i class="fas fa-receipt"></i> 지출 내역
+        </button>
+        <button class="sidebar-nav-item" data-web-tab="stats">
+          <i class="fas fa-chart-pie"></i> 지출 통계
+        </button>
+        <div class="sidebar-nav-divider"></div>
+        <button class="sidebar-nav-item" data-web-tab="fridge">
+          <i class="fas fa-box-open"></i> 냉장고 파먹기
+        </button>
+        <button class="sidebar-nav-item" data-web-tab="budget">
+          <i class="fas fa-wallet"></i> 예산 관리
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="sidebar-add-btn" id="web-add-expense-btn">
+          <i class="fas fa-plus"></i> 지출 추가하기
+        </button>
+      </div>
+    </aside>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="web-main" id="web-main">
+
+      <!-- 상단 헤더 -->
+      <header class="web-topbar" id="web-topbar">
+        <div class="web-topbar-title" id="web-topbar-title">홈 대시보드</div>
+        <div class="web-topbar-right">
+          <!-- 월 네비게이션 (지출/통계/예산 탭에서 표시) -->
+          <div class="web-month-nav" id="web-month-nav" style="display:none;">
+            <button class="month-btn" id="web-prev-month"><i class="fas fa-chevron-left"></i></button>
+            <span class="web-topbar-month-label" id="web-month-label">2026년 6월</span>
+            <button class="month-btn" id="web-next-month"><i class="fas fa-chevron-right"></i></button>
+          </div>
+          <button class="icon-btn" id="web-notification-btn" aria-label="알림" style="position:relative;">
+            <i class="fas fa-bell"></i>
+            <span class="badge" id="web-notif-badge">2</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- 스크롤 가능한 콘텐츠 -->
+      <div class="web-content" id="web-content">
+
+        <!-- ── 대시보드 ── -->
+        <div class="web-page active" id="web-page-dashboard">
+          <div class="web-dashboard-grid">
+
+            <!-- 히어로 카드 (전체 너비) -->
+            <div class="web-dashboard-hero">
+              <div class="web-summary-hero">
+                <div class="web-hero-left">
+                  <div class="web-hero-month" id="web-summary-month">2026년 6월</div>
+                  <div class="web-hero-label">이번 달 지출</div>
+                  <div class="web-hero-amount" id="web-dashboard-total">0원</div>
+                </div>
+                <div class="web-hero-right">
+                  <div class="web-hero-stat">
+                    <div class="web-hero-stat-val" id="web-dash-discount">0원</div>
+                    <div class="web-hero-stat-label">총 할인 혜택</div>
+                  </div>
+                  <div class="web-hero-divider"></div>
+                  <div class="web-hero-stat">
+                    <div class="web-hero-stat-val" id="web-dash-fixed">0원</div>
+                    <div class="web-hero-stat-label">고정 지출</div>
+                  </div>
+                  <div class="web-hero-divider"></div>
+                  <div class="web-hero-stat">
+                    <div class="web-hero-stat-val" id="web-dash-variable">0원</div>
+                    <div class="web-hero-stat-label">변동 지출</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 카드 실적 (전체 너비) -->
+            <div class="web-dashboard-cards">
+              <div class="web-section">
+                <div class="web-section-header">
+                  <h2>💳 카드 실적 현황</h2>
+                  <button class="text-btn" onclick="webSwitchTab('cards')">전체보기</button>
+                </div>
+                <div id="web-dashboard-cards" class="web-card-row"></div>
+              </div>
+            </div>
+
+            <!-- 도넛 차트 -->
+            <div class="web-dashboard-chart">
+              <div class="web-section" style="height:340px;">
+                <div class="web-section-header">
+                  <h2>📊 카테고리별 지출</h2>
+                  <button class="text-btn" onclick="webSwitchTab('stats')">상세보기</button>
+                </div>
+                <div style="height:260px; position:relative;">
+                  <canvas id="web-donut-chart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- 최근 지출 -->
+            <div class="web-dashboard-recent">
+              <div class="web-section" style="height:340px; overflow-y:auto;">
+                <div class="web-section-header">
+                  <h2>🧾 최근 지출</h2>
+                  <button class="text-btn" onclick="webSwitchTab('expenses')">전체보기</button>
+                </div>
+                <div id="web-recent-expenses" class="expense-list"></div>
+              </div>
+            </div>
+
+            <!-- 냉장고 알림 -->
+            <div class="web-dashboard-fridge" id="web-fridge-alert-section">
+              <div class="web-section">
+                <div class="web-section-header">
+                  <h2>🧊 유통기한 임박</h2>
+                  <button class="text-btn" onclick="webSwitchTab('fridge')">냉장고 보기</button>
+                </div>
+                <div id="web-fridge-alert-list" class="alert-list" style="display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── 카드 관리 ── -->
+        <div class="web-page" id="web-page-cards">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <h1 style="font-size:22px;font-weight:800;">내 카드 관리</h1>
+            <button class="btn-primary btn-sm" id="web-add-card-btn"><i class="fas fa-plus"></i> 카드 추가</button>
+          </div>
+          <div class="web-cards-grid" id="web-my-cards-list"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;">
+            <div class="web-section">
+              <div class="web-section-header"><h2>🎯 오늘의 카드 추천</h2></div>
+              <div id="web-card-recommend" class="recommend-list"></div>
+            </div>
+            <div class="web-section">
+              <div class="web-section-header"><h2>📈 카드별 사용 현황</h2></div>
+              <div id="web-card-usage-list" class="card-usage-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 지출 내역 ── -->
+        <div class="web-page" id="web-page-expenses">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <h1 style="font-size:22px;font-weight:800;">지출 내역</h1>
+          </div>
+          <!-- 월 요약 -->
+          <div style="display:flex;gap:12px;margin-bottom:16px;" id="web-expense-month-summary"></div>
+          <!-- 필터 -->
+          <div class="filter-tabs" id="web-expense-filter-tabs" style="padding:0 0 12px;">
+            <button class="filter-tab active" data-filter="all">전체</button>
+            <button class="filter-tab" data-filter="카드">카드</button>
+            <button class="filter-tab" data-filter="고정">고정</button>
+            <button class="filter-tab" data-filter="식료품">식료품</button>
+            <button class="filter-tab" data-filter="외식">외식</button>
+            <button class="filter-tab" data-filter="교통">교통</button>
+            <button class="filter-tab" data-filter="의료">의료</button>
+          </div>
+          <!-- 목록 -->
+          <div class="web-section">
+            <div id="web-expense-full-list" class="expense-list expense-full"></div>
+          </div>
+        </div>
+
+        <!-- ── 통계 ── -->
+        <div class="web-page" id="web-page-stats">
+          <div style="margin-bottom:20px;"><h1 style="font-size:22px;font-weight:800;">지출 통계</h1></div>
+          <div class="web-stats-layout">
+            <div class="web-stats-full">
+              <div class="web-section">
+                <div class="web-section-header">
+                  <h2>🎯 예산 대비 지출</h2>
+                  <button class="text-btn" onclick="webSwitchTab('budget')">예산설정</button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="web-budget-progress-list"></div>
+              </div>
+            </div>
+            <div>
+              <div class="web-section">
+                <div class="web-section-header"><h2>📊 카테고리 분석</h2></div>
+                <div style="height:280px;position:relative;"><canvas id="web-stats-bar-chart"></canvas></div>
+              </div>
+            </div>
+            <div>
+              <div class="web-section">
+                <div class="web-section-header"><h2>📅 3개월 지출 비교</h2></div>
+                <div style="height:220px;position:relative;"><canvas id="web-stats-line-chart"></canvas></div>
+                <div style="margin-top:16px;">
+                  <div class="web-section-header"><h2>💰 할인 혜택 정리</h2></div>
+                  <div id="web-discount-summary" class="discount-summary"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 냉장고 ── -->
+        <div class="web-page" id="web-page-fridge">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <h1 style="font-size:22px;font-weight:800;">🧊 냉장고 파먹기</h1>
+            <button class="btn-primary btn-sm" id="web-add-fridge-btn"><i class="fas fa-plus"></i> 재료 추가</button>
+          </div>
+          <!-- 영수증 스캔 배너 -->
+          <div class="receipt-scan-banner" style="margin:0 0 20px;" id="web-receipt-banner">
+            <div class="scan-icon">📷</div>
+            <div class="scan-text">
+              <strong>영수증 스캔으로 재료 추가</strong>
+              <small>사진을 찍거나 업로드하면 식재료를 자동으로 인식해요</small>
+            </div>
+            <button class="scan-btn" id="web-scan-btn">스캔</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+            <div>
+              <!-- 유통기한 임박 -->
+              <div class="web-section" id="web-fridge-expire-section" style="margin-bottom:16px;">
+                <div class="web-section-header"><h2>⚠️ 유통기한 주의</h2></div>
+                <div id="web-fridge-expire-list" class="fridge-expire-list"></div>
+              </div>
+            </div>
+            <div>
+              <div class="web-section">
+                <div class="web-section-header">
+                  <h2>전체 재료 목록</h2>
+                  <span id="web-fridge-count-label" class="count-label">0개</span>
+                </div>
+                <!-- 냉장고 필터 탭 -->
+                <div class="filter-tabs" style="padding:0 0 12px;" id="web-fridge-filter-tabs">
+                  <button class="filter-tab active" data-storage="all">전체</button>
+                  <button class="filter-tab" data-storage="냉장">냉장</button>
+                  <button class="filter-tab" data-storage="냉동">냉동</button>
+                  <button class="filter-tab" data-storage="실온">실온</button>
+                </div>
+                <div id="web-fridge-items-grid" class="fridge-grid web-fridge-grid"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 예산 관리 ── -->
+        <div class="web-page" id="web-page-budget">
+          <div style="margin-bottom:20px;"><h1 style="font-size:22px;font-weight:800;">예산 관리</h1></div>
+          <!-- 히어로 -->
+          <div class="web-summary-hero" id="web-budget-hero" style="margin-bottom:24px;background:linear-gradient(135deg,#667eea,#764ba2);">
+            <div class="web-hero-left">
+              <div class="web-hero-month" id="web-budget-month-label2">2026년 6월</div>
+              <div class="web-hero-label">총 예산</div>
+              <div class="web-hero-amount" id="web-budget-total-amount">0원</div>
+            </div>
+            <div class="web-hero-right">
+              <div class="web-hero-stat">
+                <div class="web-hero-stat-val" id="web-budget-spent">0원</div>
+                <div class="web-hero-stat-label">사용 금액</div>
+              </div>
+              <div class="web-hero-divider"></div>
+              <div class="web-hero-stat">
+                <div class="web-hero-stat-val" id="web-budget-remain">0원</div>
+                <div class="web-hero-stat-label">남은 예산</div>
+              </div>
+            </div>
+          </div>
+          <!-- 예산 항목 그리드 -->
+          <div class="web-section">
+            <div class="web-section-header">
+              <h2>📋 항목별 예산 설정</h2>
+              <span style="font-size:13px;color:var(--gray-400);">금액을 직접 입력해 예산을 설정하세요</span>
+            </div>
+            <div class="web-budget-grid" id="web-budget-items-list"></div>
+          </div>
+        </div>
+
+      </div><!-- /web-content -->
+    </div><!-- /web-main -->
+  </div><!-- /web-layout -->
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/web.js"></script>
+</body>
+</html>
