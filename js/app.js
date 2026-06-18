@@ -28,6 +28,116 @@ const LOCAL_TABLES = ['cards', 'expenses', 'budgets', 'fridge_items'];
 const STORAGE_PREFIX = 'cherrypocket_table_';
 const STATIC_DEPLOY_HOSTS = ['github.io'];
 const IS_STATIC_DEPLOY = STATIC_DEPLOY_HOSTS.some(host => window.location.hostname.endsWith(host)) || window.location.protocol === 'file:';
+const SAMPLE_DATA_VERSION = 'portfolio_demo_v2';
+const SAMPLE_DATA_FLAG_KEY = `${STORAGE_PREFIX}sample_data_version`;
+
+function buildSampleData() {
+  const currentMonth = Utils.getCurrentMonth();
+  const prevMonth = Utils.addMonths(currentMonth, -1);
+  const prev2Month = Utils.addMonths(currentMonth, -2);
+  const toDate = (month, day) => `${month}-${String(day).padStart(2, '0')}`;
+  const addDays = (days) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  };
+
+  const cards = [
+    {
+      id: 'card_seed_1',
+      user_id: 'default',
+      card_company: '신한카드',
+      card_name: '신한 Mr.Life',
+      card_type: 'credit',
+      card_number_last4: '1024',
+      card_color: '#e8344e',
+      performance_type: 'monthly',
+      performance_limit: 400000,
+      performance_current: 286000,
+      benefit_1: '마트 10% 할인',
+      benefit_2: '통신요금 할인',
+      benefit_3: '편의점 할인',
+      is_active: true,
+      order_index: 1,
+    },
+    {
+      id: 'card_seed_2',
+      user_id: 'default',
+      card_company: 'KB국민카드',
+      card_name: 'KB 노리체크',
+      card_type: 'check',
+      card_number_last4: '7781',
+      card_color: '#6366f1',
+      performance_type: 'monthly',
+      performance_limit: 300000,
+      performance_current: 193000,
+      benefit_1: '교통 10% 할인',
+      benefit_2: '카페 10% 할인',
+      benefit_3: '영화 할인',
+      is_active: true,
+      order_index: 2,
+    },
+    {
+      id: 'card_seed_3',
+      user_id: 'default',
+      card_company: '현대카드',
+      card_name: '현대 ZERO Edition2',
+      card_type: 'credit',
+      card_number_last4: '5529',
+      card_color: '#1e293b',
+      performance_type: 'monthly',
+      performance_limit: 500000,
+      performance_current: 332000,
+      benefit_1: '온라인 결제 적립',
+      benefit_2: '스트리밍 할인',
+      benefit_3: '생활 결제 할인',
+      is_active: true,
+      order_index: 3,
+    }
+  ];
+
+  const expenses = [
+    { id: 'expense_seed_1', amount: 650000, description: '월세', category: '주거', date: toDate(currentMonth, 2), payment_method: '계좌이체', card_id: '', is_fixed: true, discount_amount: 0, memo: '원룸 월세' },
+    { id: 'expense_seed_2', amount: 55000, description: '휴대폰 요금', category: '통신', date: toDate(currentMonth, 3), payment_method: '계좌이체', card_id: '', is_fixed: true, discount_amount: 0, memo: '5G 요금제' },
+    { id: 'expense_seed_3', amount: 98500, description: '이마트 장보기', category: '식료품', date: toDate(currentMonth, 5), payment_method: '신한 Mr.Life', card_id: 'card_seed_1', is_fixed: false, discount_amount: 3000, memo: '채소, 우유, 과일' },
+    { id: 'expense_seed_4', amount: 28900, description: '배달 초밥', category: '외식', date: toDate(currentMonth, 6), payment_method: 'KB 노리체크', card_id: 'card_seed_2', is_fixed: false, discount_amount: 2000, memo: '주말 저녁' },
+    { id: 'expense_seed_5', amount: 55000, description: '교통카드 충전', category: '교통', date: toDate(currentMonth, 8), payment_method: 'KB 노리체크', card_id: 'card_seed_2', is_fixed: false, discount_amount: 1500, memo: '지하철/버스' },
+    { id: 'expense_seed_6', amount: 18000, description: '병원 진료비', category: '의료', date: toDate(currentMonth, 9), payment_method: '직접입력', card_id: '', is_fixed: false, discount_amount: 0, memo: '내과 진료' },
+    { id: 'expense_seed_7', amount: 42000, description: '전기·수도 요금', category: '공과금', date: toDate(currentMonth, 10), payment_method: '계좌이체', card_id: '', is_fixed: true, discount_amount: 0, memo: '관리비 별도' },
+    { id: 'expense_seed_8', amount: 27000, description: '영화 + 팝콘', category: '문화', date: toDate(currentMonth, 12), payment_method: '현대 ZERO Edition2', card_id: 'card_seed_3', is_fixed: false, discount_amount: 4000, memo: '주말 문화생활' },
+    { id: 'expense_seed_9', amount: 69000, description: '온라인 강의 결제', category: '교육', date: toDate(currentMonth, 14), payment_method: '현대 ZERO Edition2', card_id: 'card_seed_3', is_fixed: false, discount_amount: 0, memo: '자격증 강의' },
+    { id: 'expense_seed_10', amount: 300000, description: '자유적금 이체', category: '적금', date: toDate(currentMonth, 15), payment_method: '계좌이체', card_id: '', is_fixed: true, discount_amount: 0, memo: '월 자동이체' },
+    { id: 'expense_seed_11', amount: 76000, description: '홈플러스 장보기', category: '식료품', date: toDate(prevMonth, 7), payment_method: '신한 Mr.Life', card_id: 'card_seed_1', is_fixed: false, discount_amount: 2500, memo: '냉동식품 포함' },
+    { id: 'expense_seed_12', amount: 41500, description: '친구와 저녁식사', category: '외식', date: toDate(prevMonth, 13), payment_method: 'KB 노리체크', card_id: 'card_seed_2', is_fixed: false, discount_amount: 0, memo: '파스타' },
+    { id: 'expense_seed_13', amount: 38200, description: '버스·택시', category: '교통', date: toDate(prevMonth, 19), payment_method: 'KB 노리체크', card_id: 'card_seed_2', is_fixed: false, discount_amount: 1200, memo: '비 오는 날 택시' },
+    { id: 'expense_seed_14', amount: 124000, description: '운동화 구매', category: '의류', date: toDate(prev2Month, 11), payment_method: '현대 ZERO Edition2', card_id: 'card_seed_3', is_fixed: false, discount_amount: 10000, memo: '러닝화' },
+    { id: 'expense_seed_15', amount: 50000, description: '생일 선물', category: '경조사', date: toDate(prev2Month, 24), payment_method: '직접입력', card_id: '', is_fixed: false, discount_amount: 0, memo: '친구 선물' }
+  ];
+
+  const budgets = [
+    { id: 'budget_seed_1', category: '주거', month: currentMonth, budget_amount: 650000, goal_amount: 650000 },
+    { id: 'budget_seed_2', category: '통신', month: currentMonth, budget_amount: 60000, goal_amount: 60000 },
+    { id: 'budget_seed_3', category: '식료품', month: currentMonth, budget_amount: 250000, goal_amount: 250000 },
+    { id: 'budget_seed_4', category: '외식', month: currentMonth, budget_amount: 180000, goal_amount: 180000 },
+    { id: 'budget_seed_5', category: '교통', month: currentMonth, budget_amount: 90000, goal_amount: 90000 },
+    { id: 'budget_seed_6', category: '의료', month: currentMonth, budget_amount: 50000, goal_amount: 50000 },
+    { id: 'budget_seed_7', category: '공과금', month: currentMonth, budget_amount: 100000, goal_amount: 100000 },
+    { id: 'budget_seed_8', category: '문화', month: currentMonth, budget_amount: 80000, goal_amount: 80000 },
+    { id: 'budget_seed_9', category: '교육', month: currentMonth, budget_amount: 120000, goal_amount: 120000 }
+  ];
+
+  const fridge_items = [
+    { id: 'fridge_seed_1', name: '우유', category: '유제품', quantity: 1, unit: '팩', storage_type: '냉장', expire_date: addDays(1), added_date: addDays(-2), is_used: false },
+    { id: 'fridge_seed_2', name: '계란', category: '유제품', quantity: 10, unit: '알', storage_type: '냉장', expire_date: addDays(3), added_date: addDays(-4), is_used: false },
+    { id: 'fridge_seed_3', name: '닭가슴살', category: '고기류', quantity: 2, unit: '팩', storage_type: '냉동', expire_date: addDays(14), added_date: addDays(-7), is_used: false },
+    { id: 'fridge_seed_4', name: '두부', category: '기타', quantity: 1, unit: '모', storage_type: '냉장', expire_date: addDays(2), added_date: addDays(-1), is_used: false },
+    { id: 'fridge_seed_5', name: '만두', category: '냉동식품', quantity: 1, unit: '봉', storage_type: '냉동', expire_date: addDays(30), added_date: addDays(-10), is_used: false },
+    { id: 'fridge_seed_6', name: '파스타소스', category: '양념/소스', quantity: 1, unit: '병', storage_type: '실온', expire_date: addDays(45), added_date: addDays(-12), is_used: false }
+  ];
+
+  return { cards, expenses, budgets, fridge_items };
+}
 
 const API = {
   mode: IS_STATIC_DEPLOY ? 'local' : 'remote',
@@ -49,6 +159,25 @@ const API = {
         localStorage.setItem(key, '[]');
       }
     });
+
+    if (IS_STATIC_DEPLOY && localStorage.getItem(SAMPLE_DATA_FLAG_KEY) !== SAMPLE_DATA_VERSION) {
+      const sampleData = buildSampleData();
+      LOCAL_TABLES.forEach(table => {
+        const key = this._storageKey(table);
+        let rows = [];
+        try {
+          rows = JSON.parse(localStorage.getItem(key) || '[]');
+        } catch {
+          rows = [];
+        }
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+          localStorage.setItem(key, JSON.stringify(sampleData[table] || []));
+        }
+      });
+      localStorage.setItem(SAMPLE_DATA_FLAG_KEY, SAMPLE_DATA_VERSION);
+    }
+
     this._localReady = true;
   },
 
