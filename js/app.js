@@ -1208,6 +1208,43 @@ function closeModal(id) {
   if (el) el.style.display = 'none';
 }
 
+function getOpenModals() {
+  return [...document.querySelectorAll('.modal-overlay')].filter(el => getComputedStyle(el).display !== 'none');
+}
+
+function closeTopModal() {
+  const openModals = getOpenModals();
+  const lastModal = openModals.at(-1);
+  if (lastModal?.id) closeModal(lastModal.id);
+}
+
+let _modalSystemInited = false;
+function initModalSystem() {
+  if (_modalSystemInited) return;
+  _modalSystemInited = true;
+
+  document.addEventListener('click', (e) => {
+    const closeBtn = e.target.closest('.modal-close');
+    if (closeBtn) {
+      const explicitTarget = closeBtn.dataset.closeTarget;
+      const modal = explicitTarget ? document.getElementById(explicitTarget) : closeBtn.closest('.modal-overlay');
+      if (modal?.id) closeModal(modal.id);
+      return;
+    }
+
+    const overlay = e.target.closest('.modal-overlay');
+    if (overlay && e.target === overlay) {
+      closeModal(overlay.id);
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeTopModal();
+    }
+  });
+}
+
 /* ────────────────────────────────
    이벤트 리스너
 ──────────────────────────────── */
@@ -1222,29 +1259,18 @@ function initEventListeners() {
 
   // 지출 추가 버튼
   document.getElementById('add-expense-btn').addEventListener('click', openAddExpenseModal);
-  document.getElementById('close-expense-modal').addEventListener('click', () => closeModal('add-expense-modal'));
   document.getElementById('save-expense-btn').addEventListener('click', saveExpense);
 
   // 카드 추가 버튼
   document.getElementById('add-card-btn').addEventListener('click', initCardForm);
-  document.getElementById('close-card-modal').addEventListener('click', () => closeModal('add-card-modal'));
   document.getElementById('save-card-btn').addEventListener('click', saveCard);
 
   // 냉장고 추가
   document.getElementById('add-fridge-btn').addEventListener('click', openAddFridgeModal);
-  document.getElementById('close-fridge-modal').addEventListener('click', () => closeModal('add-fridge-modal'));
   document.getElementById('save-fridge-btn').addEventListener('click', saveFridgeItem);
 
   // 알림 버튼
   document.getElementById('notification-btn').addEventListener('click', renderNotifications);
-  document.getElementById('close-notif-panel').addEventListener('click', () => closeModal('notification-panel'));
-
-  // 모달 오버레이 클릭 닫기
-  document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) overlay.style.display = 'none';
-    });
-  });
 
   // 지출 내역 필터
   document.getElementById('expense-filter-tabs').addEventListener('click', (e) => {
@@ -1310,6 +1336,7 @@ function initEventListeners() {
    앱 초기화
 ──────────────────────────────── */
 async function initApp() {
+  initModalSystem();
   await loadAllData();
 
   // 스플래시 제거 후 레이아웃 결정
