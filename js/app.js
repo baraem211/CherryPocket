@@ -24,29 +24,141 @@ const State = {
 /* ────────────────────────────────
    API 래퍼
 ──────────────────────────────── */
+const LOCAL_TABLES = ['cards', 'expenses', 'budgets', 'fridge_items'];
+const STORAGE_PREFIX = 'cherrypocket_table_';
+const STATIC_DEPLOY_HOSTS = ['github.io'];
+const IS_STATIC_DEPLOY = STATIC_DEPLOY_HOSTS.some(host => window.location.hostname.endsWith(host)) || window.location.protocol === 'file:';
+
 const API = {
+  mode: IS_STATIC_DEPLOY ? 'local' : 'remote',
+  _localReady: false,
+
+  _storageKey(table) {
+    return `${STORAGE_PREFIX}${table}`;
+  },
+
+  _makeId() {
+    return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  },
+
+  _ensureLocalStore() {
+    if (this._localReady) return;
+    LOCAL_TABLES.forEach(table => {
+      const key = this._storageKey(table);
+      if (localStorage.getItem(key) === null) {
+        localStorage.setItem(key, '[]');
+      }
+    });
+    this._localReady = true;
+  },
+
+  _readLocal(table) {
+    this._ensureLocalStore();
+    try {
+      return JSON.parse(localStorage.getItem(this._storageKey(table)) || '[]');
+    } catch (err) {
+      console.warn('[CherryPocket] localStorage parse failed:', err);
+      localStorage.setItem(this._storageKey(table), '[]');
+      return [];
+    }
+  },
+
+  _writeLocal(table, rows) {
+    this._ensureLocalStore();
+    localStorage.setItem(this._storageKey(table), JSON.stringify(rows));
+  },
+
+  _switchToLocal(reason) {
+    if (this.mode !== 'local') {
+      console.warn('[CherryPocket] Table API unavailable. Falling back to localStorage.', reason);
+    }
+    this.mode = 'local';
+    this._ensureLocalStore();
+  },
+
+  async _requestJson(url, options = {}) {
+    const res = await fetch(url, options);
+    const contentType = res.headers.get('content-type') || '';
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} for ${url}`);
+    }
+
+    if (!contentType.includes('application/json')) {
+      throw new Error(`Expected JSON but received ${contentType || 'unknown content type'} from ${url}`);
+    }
+
+    return res.json();
+  },
+
   async get(table, params = '') {
-    const res = await fetch(`tables/${table}?limit=500${params}`);
-    return res.json();
+    if (this.mode !== 'local') {
+      try {
+        return await this._requestJson(`tables/${table}?limit=500${params}`);
+      } catch (err) {
+        this._switchToLocal(err);
+      }
+    }
+
+    return { data: this._readLocal(table) };
   },
+
   async post(table, data) {
-    const res = await fetch(`tables/${table}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return res.json();
+    if (this.mode !== 'local') {
+      try {
+        return await this._requestJson(`tables/${table}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+      } catch (err) {
+        this._switchToLocal(err);
+      }
+    }
+
+    const rows = this._readLocal(table);
+    const record = { ...data, id: data?.id ?? this._makeId() };
+    rows.unshift(record);
+    this._writeLocal(table, rows);
+    return record;
   },
+
   async put(table, id, data) {
-    const res = await fetch(`tables/${table}/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return res.json();
+    if (this.mode !== 'local') {
+      try {
+        return await this._requestJson(`tables/${table}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+      } catch (err) {
+        this._switchToLocal(err);
+      }
+    }
+
+    const rows = this._readLocal(table);
+    const index = rows.findIndex(row => String(row.id) === String(id));
+    const updated = { ...(index >= 0 ? rows[index] : {}), ...data, id };
+
+    if (index >= 0) rows[index] = updated;
+    else rows.unshift(updated);
+
+    this._writeLocal(table, rows);
+    return updated;
   },
+
   async delete(table, id) {
-    await fetch(`tables/${table}/${id}`, { method: 'DELETE' });
+    if (this.mode !== 'local') {
+      try {
+        await this._requestJson(`tables/${table}/${id}`, { method: 'DELETE' });
+        return;
+      } catch (err) {
+        this._switchToLocal(err);
+      }
+    }
+
+    const rows = this._readLocal(table).filter(row => String(row.id) !== String(id));
+    this._writeLocal(table, rows);
   }
 };
 
@@ -1097,6 +1209,10 @@ async function initApp() {
     }
 
     updateNotifBadge();
+
+    if (API.mode === 'local') {
+      setTimeout(() => showToast('☁️ GitHub Pages에서는 브라우저 로컬 저장소 모드로 실행돼요', 3200), 250);
+    }
   }, 2200);
 }
 
